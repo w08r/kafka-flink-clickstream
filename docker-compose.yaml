@@ -1,0 +1,84 @@
+services:
+
+  kafka:
+    image: apache/kafka-native:3.8.@sha256:8c671522f7f84d0fd20b1482a1d41fa4544eff02b4027673116d4fa74a508106
+    container_name: kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
+    healthcheck:
+      test: nc -z kafka:9092
+      interval: 10s
+      retries: 30
+      start_period: 10s
+      timeout: 10s
+
+  producer:
+    build: endpoints
+    command: producer
+    container_name: producer
+    healthcheck:
+      test: ok
+      interval: 2s
+      retries: 30
+      start_period: 2s
+      timeout: 5s
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: sleep 5
+      interval: 10s
+      start_period: 10s
+      timeout: 10s
+
+  consumer:
+    build: endpoints
+    command: consumer
+    container_name: consumer
+    healthcheck:
+      test: ok
+      interval: 2s
+      retries: 30
+      start_period: 2s
+      timeout: 5s
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  jobmanager:
+    build: f
+    ports:
+      - "8081:8081"
+    command: standalone-job --job-classname com.github.w08r.DataStreamJob --jars /cp/f-1.0-SNAPSHOT.jar
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        parallelism.default: 2
+    depends_on:
+      producer:
+        condition: service_healthy
+
+  taskmanager:
+    build: f
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    scale: 1
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        parallelism.default: 2

@@ -1,0 +1,9 @@
+[package]
+name = "endpoints"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rdkafka = { version = "0.36.2", features = ["cmake-build"] }
+tokio = { version = "1.18", features = ["macros", "time", "rt-multi-thread"] }
+rand = "0.8.5"
