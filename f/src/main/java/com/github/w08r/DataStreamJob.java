@@ -7,23 +7,30 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.kafka.clients.producer.ProducerRecord;
-
+import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
 class RS implements KafkaRecordSerializationSchema<String> {
+    private String outTopic;
+
+    public RS(String outTopic) {
+        this.outTopic = outTopic;
+    }
+
     @Override
     public ProducerRecord<byte[], byte[]> serialize(String element,
             KafkaRecordSerializationSchema.KafkaSinkContext context,
             Long timestamp) {
         return new ProducerRecord<byte[], byte[]>(
-                "counts",
+                this.outTopic,
                 java.util.UUID.randomUUID().toString().getBytes(),
                 element.getBytes());
     }
@@ -42,23 +49,37 @@ class Click {
     }
 }
 
-class MyProcessWindowFunction
-    extends ProcessWindowFunction<Click, String, String, TimeWindow> {
+class UrlCounter
+        extends ProcessWindowFunction<Click, String, String, TimeWindow> {
 
-  @Override
-  public void process(String key, Context context, Iterable<Click> input, Collector<String> out) {
-    long count = 0;
-    for (Click in: input) {
-      count++;
+    @Override
+    public void process(String key, Context context, Iterable<Click> input, Collector<String> out) {
+        long count = 0;
+        for (Click in : input) {
+            count++;
+        }
+        out.collect(key + ":" + Long.toString(count));
     }
-    out.collect(key + ":" + Long.toString(count));
-  }
+}
+
+class TotalCounter
+        extends ProcessAllWindowFunction<Click, String, TimeWindow> {
+
+    @Override
+    public void process(Context context, Iterable<Click> input, Collector<String> out) {
+        long count = 0;
+        for (Click in : input) {
+            count++;
+        }
+        out.collect("total:" + Long.toString(count));
+    }
 }
 
 public class DataStreamJob {
 
-     public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
         KafkaSource<String> ks = KafkaSource.<String>builder()
                 .setBootstrapServers("kafka:9092")
                 .setTopics("clicks")
@@ -67,17 +88,32 @@ public class DataStreamJob {
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build();
 
-        KafkaSink<String> kn = KafkaSink.<String>builder()
+        KafkaSink<String> counts = KafkaSink.<String>builder()
                 .setBootstrapServers("kafka:9092")
-                .setRecordSerializer(new RS())
+                .setRecordSerializer(new RS("counts"))
+                .build();
+        KafkaSink<String> total = KafkaSink.<String>builder()
+                .setBootstrapServers("kafka:9092")
+                .setRecordSerializer(new RS("total"))
                 .build();
 
-        DataStream<String> in = env.fromSource(ks, WatermarkStrategy.noWatermarks(), "flink");
+        DataStream<String> in = env.fromSource(ks,
+                // recommended watermark from reading from partitioned kafka.
+                WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(20)),
+                "clicks");
+
+        // A tumbling window (no overlap) of counts grouped by url
         in.map(s -> new Click(s))
-            .keyBy(c -> c.getUrl())
-            .window(TumblingProcessingTimeWindows.of(Duration.ofSeconds(5)))
-            .process(new MyProcessWindowFunction())
-            .sinkTo(kn);
+                .keyBy(c -> c.getUrl())
+                .window(TumblingProcessingTimeWindows.of(Duration.ofSeconds(5)))
+                .process(new UrlCounter())
+                .sinkTo(counts);
+
+        // sliding window (10 seconds size, 5 seconds slide) of total clicks
+        in.map(s -> new Click(s))
+                .windowAll(SlidingEventTimeWindows.of(Duration.ofSeconds(10), Duration.ofSeconds(5)))
+                .process(new TotalCounter())
+                .sinkTo(total);
 
         env.execute("Kafka streamer");
     }

@@ -14,21 +14,16 @@ use rdkafka::topic_partition_list::TopicPartitionList;
 async fn main() {
     let brokers = "kafka:9092";
 
-    let topic_name = "counts";
-
     let consumer: &StreamConsumer = &ClientConfig::new()
         .set("group.id", "1")
         .set("bootstrap.servers", brokers)
         .set("enable.partition.eof", "false")
         .set("session.timeout.ms", "6000")
-        .set("enable.auto.commit", "true")
-        //.set("statistics.interval.ms", "30000")
-        //.set("auto.offset.reset", "smallest")
         .create()
         .expect("Consumer creation failed");
 
     consumer
-        .subscribe(&vec![topic_name])
+        .subscribe(&vec!["counts", "total"])
         .expect("Can't subscribe to specified topics");
 
     loop {
@@ -43,15 +38,8 @@ async fn main() {
                         ""
                     }
                 };
-                // println!("key: '{:?}', payload: '{}', topic: {}, partition: {}, offset: {}, timestamp: {:?}",
-                      // m.key(), payload, m.topic(), m.partition(), m.offset(), m.timestamp());
                 println!("{}", payload);
-                // if let Some(headers) = m.headers() {
-                //     for header in headers.iter() {
-                //         println!("  Header {:#?}: {:?}", header.key, header.value);
-                //     }
-                // }
-                consumer.commit_message(&m, CommitMode::Async).unwrap();
+                consumer.commit_message(&m, CommitMode::Async).expect("Commit failed");
             }
         };
     }
