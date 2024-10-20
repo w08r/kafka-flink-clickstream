@@ -97,21 +97,20 @@ public class DataStreamJob {
                 .setRecordSerializer(new RS("total"))
                 .build();
 
-        DataStream<String> in = env.fromSource(ks,
+        DataStream<Click> in = env.fromSource(ks,
                 // recommended watermark from reading from partitioned kafka.
                 WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(20)),
-                "clicks");
+                "clicks")
+            .map(s -> new Click(s));
 
         // A tumbling window (no overlap) of counts grouped by url
-        in.map(s -> new Click(s))
-                .keyBy(c -> c.getUrl())
+        in.keyBy(c -> c.getUrl())
                 .window(TumblingProcessingTimeWindows.of(Duration.ofSeconds(5)))
                 .process(new UrlCounter())
                 .sinkTo(counts);
 
         // sliding window (10 seconds size, 5 seconds slide) of total clicks
-        in.map(s -> new Click(s))
-                .windowAll(SlidingEventTimeWindows.of(Duration.ofSeconds(10), Duration.ofSeconds(5)))
+        in.windowAll(SlidingEventTimeWindows.of(Duration.ofSeconds(10), Duration.ofSeconds(5)))
                 .process(new TotalCounter())
                 .sinkTo(total);
 
