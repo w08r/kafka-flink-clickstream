@@ -45,7 +45,6 @@ class Click {
 
     public String getUrl() {
         return this.url;
-
     }
 }
 
@@ -80,6 +79,8 @@ public class DataStreamJob {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+        env.enableCheckpointing(1000);
+
         KafkaSource<String> ks = KafkaSource.<String>builder()
                 .setBootstrapServers("kafka:9092")
                 .setTopics("clicks")
@@ -101,7 +102,7 @@ public class DataStreamJob {
                 // recommended watermark from reading from partitioned kafka.
                 WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(20)),
                 "clicks")
-            .map(s -> new Click(s));
+                .map(s -> new Click(s));
 
         // A tumbling window (no overlap) of counts grouped by url
         in.keyBy(c -> c.getUrl())
