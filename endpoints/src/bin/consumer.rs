@@ -1,14 +1,7 @@
-use std::time::Duration;
-
-use tokio::time;
-
-use rdkafka::config::{FromClientConfig,ClientConfig};
-use rdkafka::message::{Header, OwnedHeaders};
+use rdkafka::config::{ClientConfig};
 use rdkafka::consumer::stream_consumer::StreamConsumer;
-use rdkafka::consumer::{BaseConsumer, CommitMode, Consumer, ConsumerContext, Rebalance};
-use rdkafka::error::KafkaResult;
-use rdkafka::message::{Headers, Message};
-use rdkafka::topic_partition_list::TopicPartitionList;
+use rdkafka::consumer::{CommitMode, Consumer};
+use rdkafka::message::{Message};
 
 #[tokio::main]
 async fn main() {

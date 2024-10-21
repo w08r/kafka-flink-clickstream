@@ -17,6 +17,16 @@
                 google-java-format
                 graalvm-ce
                 gcc
+                cargo
+                clippy
+                iconv
+                lldb_18
+                rust-analyzer
+                rustc
+                rustfmt
+                cmake
+                kaf
+                kcat
               ];
             };
           };
