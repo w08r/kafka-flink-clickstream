@@ -27,6 +27,8 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTime
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema;
 import org.apache.flink.util.Collector;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.table.api.Table;
 
 class RS implements KafkaRecordSerializationSchema<String> {
     private String outTopic;
@@ -149,6 +151,9 @@ public class DataStreamJob {
         in.windowAll(SlidingEventTimeWindows.of(Duration.ofSeconds(10), Duration.ofSeconds(5)))
                 .process(new TotalCounter())
                 .sinkTo(total);
+
+        StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
+        Table inputTable = tableEnv.fromDataStream(in);
 
         env.execute("Kafka streamer");
     }
