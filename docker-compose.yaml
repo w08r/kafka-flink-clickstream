@@ -59,10 +59,10 @@ services:
         condition: service_healthy
 
   jobmanager:
-    build: f
+    build: processors
     ports:
       - "8081:8081"
-    command: standalone-job --job-classname com.github.w08r.DataStreamJob --jars /cp/f-1.0-SNAPSHOT.jar
+    command: standalone-job --job-classname w08r_flink.processor --jars /cp/processor-0.0.0-standalone.jar
     environment:
       - |
         FLINK_PROPERTIES=
@@ -73,7 +73,7 @@ services:
         condition: service_healthy
 
   taskmanager:
-    build: f
+    build: processors
     depends_on:
       - jobmanager
     command: taskmanager

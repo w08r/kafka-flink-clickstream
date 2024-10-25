@@ -13,9 +13,6 @@
             default = mkShell {
               packages = [
                 jdk22
-                maven
-                google-java-format
-                graalvm-ce
                 gcc
                 cargo
                 clippy
@@ -27,6 +24,7 @@
                 cmake
                 kaf
                 kcat
+                clojure
               ];
             };
           };
