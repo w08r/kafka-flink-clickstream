@@ -4,25 +4,16 @@
            (java.time Duration)
            (org.apache.flink.api.java.functions KeySelector)
            (org.apache.flink.api.common.eventtime WatermarkStrategy)
-           (org.apache.flink.api.common.serialization DeserializationSchema SimpleStringSchema)
-           (org.apache.flink.api.common.typeinfo TypeInformation)
            (org.apache.flink.api.java.typeutils TypeExtractor ResultTypeQueryable)
            (org.apache.flink.connector.kafka.sink KafkaRecordSerializationSchema KafkaSink)
            (org.apache.flink.connector.kafka.source KafkaSource)
            (org.apache.flink.connector.kafka.source.enumerator.initializer OffsetsInitializer)
            (org.apache.flink.connector.kafka.source.reader.deserializer KafkaRecordDeserializationSchema)
-           (org.apache.flink.streaming.api.datastream DataStream)
            (org.apache.flink.streaming.api.environment StreamExecutionEnvironment)
-           (org.apache.flink.streaming.api.functions.windowing ProcessAllWindowFunction ProcessWindowFunction)
            (org.apache.flink.streaming.api.windowing.assigners SlidingEventTimeWindows TumblingProcessingTimeWindows)
            (org.apache.flink.streaming.api.windowing.windows TimeWindow)
-           (org.apache.flink.streaming.connectors.kafka KafkaDeserializationSchema)
            (org.apache.flink.streaming.util.serialization JSONKeyValueDeserializationSchema)
-           (org.apache.flink.table.api Table)
-           (org.apache.flink.table.api.bridge.java StreamTableEnvironment)
-           (org.apache.flink.util Collector)
            (org.apache.flink.api.common.functions MapFunction)
-           (org.apache.kafka.clients.consumer ConsumerRecord)
            (org.apache.kafka.clients.producer ProducerRecord))
 
   (:gen-class))
@@ -37,6 +28,20 @@
   KeySelector (getKey [this in] in)
   ResultTypeQueryable (getProducedType [this]
                         (TypeExtractor/getForClass String)))
+
+(defn kafka-deser [topic]
+  (reify KafkaRecordSerializationSchema
+    (serialize [this, e, c, t]
+      (new ProducerRecord
+           topic,
+           (-> (java.util.UUID/randomUUID) (.toString) (.getBytes))
+           (.getBytes e)))))
+
+(defn kafka-sink [topic]
+  (-> (KafkaSink/builder)
+      (.setBootstrapServers "kafka:9092")
+      (.setRecordSerializer (kafka-deser topic))
+      (.build)))
 
 (defn -main [& _args]
   (let [e (StreamExecutionEnvironment/getExecutionEnvironment)
@@ -55,25 +60,9 @@
                                      (.deserialize kvd r o))))
                (.build))
 
-        counts (-> (KafkaSink/builder)
-                   (.setBootstrapServers "kafka:9092")
-                   (.setRecordSerializer (reify KafkaRecordSerializationSchema
-                                           (serialize [this, e, c, t]
-                                             (new ProducerRecord
-                                                  "counts",
-                                                  (-> (java.util.UUID/randomUUID) (.toString) (.getBytes))
-                                                  (.getBytes e)))))
-                   (.build))
+        counts (kafka-sink "counts")
 
-        total (-> (KafkaSink/builder)
-                  (.setBootstrapServers "kafka:9092")
-                  (.setRecordSerializer (reify KafkaRecordSerializationSchema
-                                          (serialize [this, e, c, t]
-                                            (new ProducerRecord
-                                                 "total",
-                                                 (-> (java.util.UUID/randomUUID) (.toString) (.getBytes))
-                                                 (.getBytes e)))))
-                  (.build))
+        total (kafka-sink "total")
 
         in (-> (.fromSource e ks (WatermarkStrategy/forBoundedOutOfOrderness (Duration/ofSeconds 20)) "clicks")
                (.map (new kafka-click-to-string)))]
