@@ -5,14 +5,10 @@
   (:gen-class
    :implements [org.apache.flink.api.java.typeutils.ResultTypeQueryable]
    :extends org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction
-   :init init
-   :state state
    :main false
    :prefix "st-"))
 
 (set! *warn-on-reflection* true)
-
-(defn st-init [])
 
 (defn st-getProducedType [this]
   (org.apache.flink.api.java.typeutils.TypeExtractor/getForClass String))

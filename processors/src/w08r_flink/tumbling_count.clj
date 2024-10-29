@@ -5,14 +5,10 @@
   (:gen-class
    :implements [org.apache.flink.api.java.typeutils.ResultTypeQueryable]
    :extends org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction
-   :init init
-   :state state
    :main false
    :prefix "tf-"))
 
 (set! *warn-on-reflection* true)
-
-(defn tf-init [])
 
 (defn tf-getProducedType [this]
   (org.apache.flink.api.java.typeutils.TypeExtractor/getForClass String))
