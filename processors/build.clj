@@ -20,7 +20,8 @@
   (b/compile-clj {:basis @basis
                   :ns-compile '[w08r-flink.sliding-total
                                 w08r-flink.tumbling-count
-                                w08r-flink.processor]
+                                w08r-flink.processor
+                                w08r-flink.kafka]
                   :class-dir class-dir})
   (b/uber {:class-dir class-dir
            :uber-file uber-file
