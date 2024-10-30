@@ -1,5 +1,7 @@
 (ns w08r-flink.kafka
   (:import (com.fasterxml.jackson.databind.node ObjectNode)
+           (com.fasterxml.jackson.databind ObjectMapper)
+           (java.util HashMap)
            (org.apache.flink.connector.kafka.sink KafkaRecordSerializationSchema KafkaSink)
            (org.apache.flink.connector.kafka.source KafkaSource)
            (org.apache.flink.connector.kafka.source.enumerator.initializer OffsetsInitializer)
@@ -25,11 +27,13 @@
 (defn serialiser [^String topic]
   (reify KafkaRecordSerializationSchema
     (serialize ^ProducerRecord [this, e, c, t]
-      (let [es ^String e]
-        (new ProducerRecord
-             topic,
-             (-> (java.util.UUID/randomUUID) (.toString) (.getBytes))
-             (.getBytes es))))))
+      (let [es ^HashMap e
+            om (new ObjectMapper)]
+        (let [key (if (contains? e :key) (:key e) (java.util.UUID/randomUUID))]
+          (new ProducerRecord
+               topic,
+               (-> key (.toString) (.getBytes))
+               (.writeValueAsBytes om e)))))))
 
 (defn sink [^String topic]
   (-> (KafkaSink/builder)
