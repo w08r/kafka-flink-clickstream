@@ -17,9 +17,12 @@
   (clean nil)
   (b/copy-dir {:src-dirs ["src" "resources"]
                :target-dir class-dir})
+  (b/javac {:basis @basis
+            :src-dirs ["java"]
+            :class-dir class-dir
+            :javac-opts ["-source" "14" "-target" "14"]})
   (b/compile-clj {:basis @basis
                   :ns-compile '[w08r-flink.sliding-total
-                                w08r-flink.ts-extractor
                                 w08r-flink.tumbling-count
                                 w08r-flink.processor
                                 w08r-flink.kafka]

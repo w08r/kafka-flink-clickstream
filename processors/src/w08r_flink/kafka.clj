@@ -7,7 +7,6 @@
            (org.apache.flink.api.java.tuple Tuple2)
            (org.apache.flink.streaming.util.serialization JSONKeyValueDeserializationSchema)
            (org.apache.flink.api.common.functions MapFunction)
-           (org.apache.flink.api.java.functions KeySelector)
            (org.apache.flink.connector.kafka.source.reader.deserializer KafkaRecordDeserializationSchema)
            (org.apache.flink.types Row RowKind)
            (org.apache.kafka.clients.producer ProducerRecord)))
@@ -22,11 +21,6 @@
                    (-> on (.get "value") (.get "time") (.asLong)))))
   ResultTypeQueryable (getProducedType [this]
                         (TypeExtractor/getForObject (Tuple2/of "" 0))))
-
-(deftype keyer []
-  KeySelector (getKey [this in] (.getField in 1))
-  ResultTypeQueryable (getProducedType [this]
-                        (TypeExtractor/getForClass String)))
 
 (defn serialiser [^String topic]
   (reify KafkaRecordSerializationSchema

@@ -1,9 +1,10 @@
 (ns w08r-flink.processor
   (:require [w08r-flink.kafka :as k])
   (:import
-   (w08r_flink ts_extractor sliding_total tumbling_count)
+   (w08r_flink sliding_total tumbling_count Keyer)
    (org.apache.flink.streaming.api.datastream DataStreamSource KeyedStream)
    (java.time Duration)
+   (org.apache.flink.configuration Configuration CheckpointingOptions)
    (org.apache.flink.api.common.eventtime WatermarkStrategy)
    (org.apache.flink.streaming.api.environment StreamExecutionEnvironment)
    (org.apache.flink.streaming.api.windowing.assigners SlidingEventTimeWindows
@@ -31,7 +32,7 @@
         t ^StreamTableEnvironment (StreamTableEnvironment/create e)
         kvd (new JSONKeyValueDeserializationSchema false)
         ks (k/source kvd)
-
+        cfg (new Configuration)
         counts (k/sink "counts")
 
         total (k/sink "total")
@@ -43,8 +44,14 @@
                 "clicks")
                (.map (k/->click-to-row)))]
 
+
+    (.enableCheckpointing e 200)
+    (.set cfg CheckpointingOptions/CHECKPOINT_STORAGE "filesystem")
+    (.set cfg CheckpointingOptions/CHECKPOINTS_DIRECTORY "file:///checkpoints")
+    (.configure e cfg)
+
     (-> in
-        (.keyBy (k/->keyer))
+        (.keyBy (new Keyer))
         (.window
          (TumblingProcessingTimeWindows/of
           (Duration/ofSeconds 5)))
