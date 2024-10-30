@@ -1,17 +1,16 @@
 use std::env;
 
-use rdkafka::config::{ClientConfig};
+use rdkafka::config::ClientConfig;
 use rdkafka::consumer::stream_consumer::StreamConsumer;
 use rdkafka::consumer::{CommitMode, Consumer};
-use rdkafka::message::{Message};
+use rdkafka::message::Message;
 
 #[tokio::main]
 async fn main() {
     let brokers = match env::var("KAFKA_BROKERS") {
         Ok(v) => v,
-        Err(_) => String::from("kafka:9092")
+        Err(_) => String::from("kafka:9092"),
     };
-
 
     let consumer: &StreamConsumer = &ClientConfig::new()
         .set("group.id", "1")
@@ -38,7 +37,9 @@ async fn main() {
                     }
                 };
                 println!("{}", payload);
-                consumer.commit_message(&m, CommitMode::Async).expect("Commit failed");
+                consumer
+                    .commit_message(&m, CommitMode::Async)
+                    .expect("Commit failed");
             }
         };
     }

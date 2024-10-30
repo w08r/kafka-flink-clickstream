@@ -1,10 +1,10 @@
 use rand::prelude::*;
-use std::env;
-use std::time::{Duration, SystemTime};
-use rdkafka::config::{ClientConfig};
+use rdkafka::config::ClientConfig;
 use rdkafka::message::{Header, OwnedHeaders};
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use serde::Serialize;
+use std::env;
+use std::time::{Duration, SystemTime};
 
 #[derive(Serialize)]
 struct Click<'a> {
@@ -16,7 +16,7 @@ struct Click<'a> {
 async fn main() {
     let brokers = match env::var("KAFKA_BROKERS") {
         Ok(v) => v,
-        Err(_) => String::from("kafka:9092")
+        Err(_) => String::from("kafka:9092"),
     };
 
     let topic_name = "clicks";
@@ -42,9 +42,12 @@ async fn main() {
                     // completed once the result or failure from Kafka is received.
                     let kv = serde_json::to_string(&Click {
                         url: &k,
-                        time: SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
-                            .expect("failed to get time").as_secs()
-                    }).expect("failed to create json payload");
+                        time: SystemTime::now()
+                            .duration_since(SystemTime::UNIX_EPOCH)
+                            .expect("failed to get time")
+                            .as_secs(),
+                    })
+                    .expect("failed to create json payload");
                     let delivery_status = producer
                         .send(
                             FutureRecord::to(topic_name)
