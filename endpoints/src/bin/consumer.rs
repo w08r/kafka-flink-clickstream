@@ -21,7 +21,7 @@ async fn main() {
         .expect("Consumer creation failed");
 
     consumer
-        .subscribe(&vec!["counts", "total"])
+        .subscribe(&["counts", "total"])
         .expect("Can't subscribe to specified topics");
 
     loop {

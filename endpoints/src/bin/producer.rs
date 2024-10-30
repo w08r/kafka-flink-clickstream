@@ -48,7 +48,10 @@ async fn main() {
                             .as_secs(),
                     })
                     .expect("failed to create json payload");
-                    let delivery_status = producer
+                    
+
+                    // This will be executed when the result is received.
+                    producer
                         .send(
                             FutureRecord::to(topic_name)
                                 .payload(&kv)
@@ -59,10 +62,7 @@ async fn main() {
                                 })),
                             Duration::from_secs(0),
                         )
-                        .await;
-
-                    // This will be executed when the result is received.
-                    delivery_status
+                        .await
                 }
             })
             .collect::<Vec<_>>();
