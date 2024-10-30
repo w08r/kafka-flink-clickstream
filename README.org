@@ -1,0 +1,70 @@
+* Click counter
+
+There was an interview system design question around counting web
+clicks.  THe requirements were around high throughput but particularly
+low latency (results not needed until the next day).
+
+Of course, once a day ingest of daily web logs into a db would be
+trivial, but got chatting about smaller apps that maybe just emit logs
+to stdout, maybe geographically replicated; moved toward writing click
+events to kafka and using stream processing to provide different
+insights.
+
+This application develops on that idea, a dummy producer rights click
+events to a partitioned kafka topic; flink reads the click data and
+provides multiple outputs based on different types of window.
+
+
+#+begin_src shell
+docker compose up
+#+end_src
+
+Takes a while (due to a little hack in the producer healthcheck). Once
+the job manager is running goto `localhost:8081` to see flink running
+the job.
+
+** Kafka Endpoints
+
+The ~endpoints~ directory contains some lightweight utilities for
+writing and reading from kafka for the purposes of this demo.
+
+** Processor
+
+The main flink processor logic is written in Clojure code and
+contained in the ~processors~ directory.
+
+*** Input and watermark strategy
+
+The input is taken from the partitioned kafka topic ~clicks~.  The
+recommended watermark strategy for partitioned kafka is
+~forBoundedOutOfOrderness~.  This tells flink to assume that messages
+in a particular partition are in event time order.  A 20 second window
+over the partitions is set up to provide correct processing with
+regards to time window.
+
+*** Windows
+
+3 different sorts of window are created:
+
+- a tumbling time window counting records (grouped by url) for each 5 seconds
+- a sliding window over all records for every 10 seconds, sliding by 5
+  seconds a time
+- another tumble window using the table api
+
+*** Table API and Joins
+
+The table api is used to join the stream of clicks with a fixed table
+(backed by the file ~urls.csv~ in the top level) and emit window data
+every minute for the resultant stream.
+
+*** Outputs
+
+There are 3 outputs:
+
+- kafka topic counts
+- kafka topic total
+- stdout
+
+The consumer program found in the ~endpoints~ directory will read from
+the 2 kafka topics and emit to stdout, and the table api stream will
+write to the flink stdout.
