@@ -10,7 +10,7 @@ to stdout, maybe geographically replicated; moved toward writing click
 events to kafka and using stream processing to provide different
 insights.
 
-This application develops on that idea, a dummy producer rights click
+This application develops on that idea, a dummy producer writes click
 events to a partitioned kafka topic; flink reads the click data and
 provides multiple outputs based on different types of window.
 
