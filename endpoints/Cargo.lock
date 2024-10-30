@@ -74,6 +74,8 @@ version = "0.1.0"
 dependencies = [
  "rand",
  "rdkafka",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 

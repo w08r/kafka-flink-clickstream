@@ -4,27 +4,31 @@
            (org.apache.flink.connector.kafka.source KafkaSource)
            (org.apache.flink.connector.kafka.source.enumerator.initializer OffsetsInitializer)
            (org.apache.flink.api.java.typeutils TypeExtractor ResultTypeQueryable)
+           (org.apache.flink.api.java.tuple Tuple2)
            (org.apache.flink.streaming.util.serialization JSONKeyValueDeserializationSchema)
            (org.apache.flink.api.common.functions MapFunction)
            (org.apache.flink.api.java.functions KeySelector)
            (org.apache.flink.connector.kafka.source.reader.deserializer KafkaRecordDeserializationSchema)
+           (org.apache.flink.types Row RowKind)
            (org.apache.kafka.clients.producer ProducerRecord)))
 
 (set! *warn-on-reflection* true)
 
-(deftype click-to-string []
+(deftype click-to-row []
   MapFunction (map [this o]
                 (let [on ^ObjectNode o]
-                  (-> on (.get "value") (.get "url") (.asText))))
+                  (Tuple2/of
+                   (-> on (.get "value") (.get "url") (.asText))
+                   (-> on (.get "value") (.get "time") (.asLong)))))
   ResultTypeQueryable (getProducedType [this]
-                        (TypeExtractor/getForClass String)))
+                        (TypeExtractor/getForObject (Tuple2/of "" 0))))
 
 (deftype keyer []
-  KeySelector (getKey [this in] in)
+  KeySelector (getKey [this in] (.getField in 1))
   ResultTypeQueryable (getProducedType [this]
                         (TypeExtractor/getForClass String)))
 
-(defn deserialiser [^String topic]
+(defn serialiser [^String topic]
   (reify KafkaRecordSerializationSchema
     (serialize ^ProducerRecord [this, e, c, t]
       (let [es ^String e]
@@ -36,7 +40,7 @@
 (defn sink [^String topic]
   (-> (KafkaSink/builder)
       (.setBootstrapServers "kafka:9092")
-      (.setRecordSerializer (deserialiser topic))
+      (.setRecordSerializer (serialiser topic))
       (.build)))
 
 (defn source [^JSONKeyValueDeserializationSchema kvd]

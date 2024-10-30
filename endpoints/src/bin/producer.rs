@@ -1,9 +1,15 @@
 use rand::prelude::*;
-use std::time::Duration;
-
+use std::time::{Duration, SystemTime};
 use rdkafka::config::{ClientConfig};
 use rdkafka::message::{Header, OwnedHeaders};
 use rdkafka::producer::{FutureProducer, FutureRecord};
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct Click<'a> {
+    url: &'a String,
+    time: u64,
+}
 
 #[tokio::main]
 async fn main() {
@@ -26,15 +32,20 @@ async fn main() {
             .map(|_i| {
                 let mut rngc = rng.clone();
                 let u = rngc.gen_range(0..8);
+                let k = format!("/url/{}", u);
                 async move {
                     // The send operation on the topic returns a future, which will be
                     // completed once the result or failure from Kafka is received.
-                    let kv = format!("{{\"url\": \"/url/{}\"}}", u);
+                    let kv = serde_json::to_string(&Click {
+                        url: &k,
+                        time: SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
+                            .expect("failed to get time").as_secs()
+                    }).expect("failed to create json payload");
                     let delivery_status = producer
                         .send(
                             FutureRecord::to(topic_name)
                                 .payload(&kv)
-                                .key(&kv)
+                                .key(&serde_json::to_string(&k).expect("failed to json key"))
                                 .headers(OwnedHeaders::new().insert(Header {
                                     key: "header_key",
                                     value: Some("header_value"),

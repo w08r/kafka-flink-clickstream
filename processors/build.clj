@@ -19,6 +19,7 @@
                :target-dir class-dir})
   (b/compile-clj {:basis @basis
                   :ns-compile '[w08r-flink.sliding-total
+                                w08r-flink.ts-extractor
                                 w08r-flink.tumbling-count
                                 w08r-flink.processor
                                 w08r-flink.kafka]

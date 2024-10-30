@@ -12,19 +12,20 @@
           devShells = rec {
             default = mkShell {
               packages = [
-                jdk22
-                gcc
                 cargo
                 clippy
+                clojure
+                cmake
+                gcc
                 iconv
+                jdk22
+                kaf
+                kcat
                 lldb_18
                 rust-analyzer
                 rustc
                 rustfmt
-                cmake
-                kaf
-                kcat
-                clojure
+                zlib
               ];
             };
           };
