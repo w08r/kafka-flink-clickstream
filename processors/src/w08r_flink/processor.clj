@@ -58,11 +58,22 @@
         (.process (new sliding_total))
         (.sinkTo total))
 
+    (.executeSql t "CREATE TEMPORARY TABLE url_lookup (
+                        url VARCHAR(50)
+                    )
+                    WITH (
+                        'connector'='filesystem',
+                        'path'='/urls.csv',
+                        'format'='csv');")
+
     (let [input-table (.fromDataStream
                        t in
-                       (exp [(.rowtime ($ "f1")) ($ "f0")]))]
+                       (exp [(.rowtime ($ "f1")) ($ "f0")]))
+          lookup (.from t "url_lookup")]
       (.createTemporaryView t "Urls" input-table)
       (-> (.from t "Urls")
+          (.join lookup)
+          (.where (.isEqual ($ "url") ($ "f0")))
           (.window (->
                     (Tumble/over (-> (Expressions/lit 60)
                                      (.seconds)))
@@ -74,14 +85,6 @@
                          (.end ($ "w"))
                          (.rowtime ($ "w"))
                          (.count ($ "f0"))]))
-          (as-> rt (.toDataStream t rt))
-          (as-> rs (do
-                     (.createTemporaryView t "UrlWindowCount" rs)
-                     (.print rs)))))
-
-    (let [count-table (.from t "UrlWindowCount")]
-      (-> (.from t "UrlWindowCount")
-          (.select (exp [(.count ($ "f0"))]))
           (as-> rt (.toDataStream t rt))
           (as-> rs (.print rs))))
 
