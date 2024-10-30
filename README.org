@@ -1,8 +1,8 @@
 #+TITLE: Click counter
 
 There was an interview system design question around counting web
-clicks.  THe requirements were around high throughput but particularly
-low latency (results not needed until the next day).
+clicks.  The requirements were around high throughput but particularly
+high latency (results not needed until the next day).
 
 Of course, once a day ingest of daily web logs into a db would be
 trivial, but got chatting about smaller apps that maybe just emit logs
