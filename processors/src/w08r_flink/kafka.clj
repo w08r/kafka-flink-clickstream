@@ -9,39 +9,56 @@
            (org.apache.flink.api.java.tuple Tuple2)
            (org.apache.flink.streaming.util.serialization JSONKeyValueDeserializationSchema)
            (org.apache.flink.api.common.functions MapFunction)
-           (org.apache.flink.connector.kafka.source.reader.deserializer KafkaRecordDeserializationSchema)
+           (org.apache.flink.connector.kafka.source.reader.deserializer
+            KafkaRecordDeserializationSchema)
            (org.apache.flink.types Row RowKind)
            (org.apache.kafka.clients.producer ProducerRecord)))
 
 (set! *warn-on-reflection* true)
 
-(deftype click-to-row []
+;; Convert the click data, which has already been deserialised into a
+;; jackson objectnode, into a map.  This class implements the
+;; MapFunction interface so can be used in a process call.
+(deftype click-to-row
+  []
   MapFunction (map [this o]
                 (let [on ^ObjectNode o]
                   (Tuple2/of
                    (-> on (.get "value") (.get "url") (.asText))
                    (-> on (.get "value") (.get "time") (.asLong)))))
+
   ResultTypeQueryable (getProducedType [this]
                         (TypeExtractor/getForObject (Tuple2/of "" 0))))
 
-(defn serialiser [^String topic]
+(defn serialiser
+  "Serialiser for given kafka topic.  If there is a key in the incoming
+  map, use it for partition selection, otherwise fall back on a random
+  uuid."
+  [^String topic]
   (reify KafkaRecordSerializationSchema
     (serialize ^ProducerRecord [this, e, c, t]
       (let [es ^HashMap e
             om (new ObjectMapper)]
-        (let [key (if (contains? e :key) (:key e) (java.util.UUID/randomUUID))]
+        (let [^String key (if (contains? e :key)
+                            (:key e)
+                            (-> (java.util.UUID/randomUUID) (.toString)))]
           (new ProducerRecord
                topic,
-               (-> key (.toString) (.getBytes))
+               (.getBytes key)
                (.writeValueAsBytes om e)))))))
 
-(defn sink [^String topic]
+(defn sink
+  "Create a kafka sink for given topic."
+  [^String topic]
   (-> (KafkaSink/builder)
       (.setBootstrapServers "kafka:9092")
       (.setRecordSerializer (serialiser topic))
       (.build)))
 
-(defn source [^JSONKeyValueDeserializationSchema kvd]
+(defn source
+  "Create a kafka source.  Use the passed in serde to parse json
+  data."
+  [^JSONKeyValueDeserializationSchema kvd]
   (-> (KafkaSource/builder)
       (.setBootstrapServers "kafka:9092")
       (.setTopics ["clicks"])

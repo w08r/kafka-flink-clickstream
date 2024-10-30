@@ -1,3 +1,5 @@
+/** Key click events by the url of the click.
+ */
 package w08r_flink;
 
 import org.apache.flink.api.java.tuple.Tuple2;

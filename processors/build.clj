@@ -21,7 +21,7 @@
   (b/javac {:basis @basis
             :src-dirs ["java"]
             :class-dir class-dir
-            :javac-opts ["-source" "14" "-target" "14"]})
+            :javac-opts ["-source" "11" "-target" "11"]})
 
   (b/compile-clj {:basis @basis
                   :ns-compile '[w08r-flink.sliding-total
