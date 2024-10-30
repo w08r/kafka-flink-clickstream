@@ -1,4 +1,5 @@
 use rand::prelude::*;
+use std::env;
 use std::time::{Duration, SystemTime};
 use rdkafka::config::{ClientConfig};
 use rdkafka::message::{Header, OwnedHeaders};
@@ -13,7 +14,10 @@ struct Click<'a> {
 
 #[tokio::main]
 async fn main() {
-    let brokers = "kafka:9092";
+    let brokers = match env::var("KAFKA_BROKERS") {
+        Ok(v) => v,
+        Err(_) => String::from("kafka:9092")
+    };
 
     let topic_name = "clicks";
 
