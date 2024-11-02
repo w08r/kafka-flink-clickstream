@@ -15,11 +15,11 @@
 
 (defn uber [_]
   (clean nil)
-  (b/copy-dir {:src-dirs ["src" "resources"]
+  (b/copy-dir {:src-dirs ["src/main/clojure" "resources"]
                :target-dir class-dir})
 
   (b/javac {:basis @basis
-            :src-dirs ["java"]
+            :src-dirs ["src/main/java"]
             :class-dir class-dir
             :javac-opts ["-source" "11" "-target" "11"]})
 

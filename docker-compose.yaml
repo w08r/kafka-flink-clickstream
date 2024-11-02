@@ -71,16 +71,22 @@ services:
     depends_on:
       producer:
         condition: service_healthy
+    volumes:
+      - ./urls.csv:/urls.csv:rw
+      - ./checkpoints:/checkpoints:rw
 
   taskmanager:
     build: processors
     depends_on:
       - jobmanager
     command: taskmanager
-    scale: 1
+    scale: 2
     environment:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
-        taskmanager.numberOfTaskSlots: 2
-        parallelism.default: 2
+        taskmanager.numberOfTaskSlots: 1
+        parallelism.default: 1
+    volumes:
+      - ./urls.csv:/urls.csv:rw
+      - ./checkpoints:/checkpoints:rw
