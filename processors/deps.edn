@@ -7,13 +7,21 @@
  :aliases
  {:extra
   {:extra-deps
-   {org.apache.flink/flink-clients {:mvn/version "1.20.0"}
+   {org.apache.flink/flink-test-utils {:mvn/version "1.20.0"}
+    org.apache.flink/flink-clients {:mvn/version "1.20.0"}
     org.apache.flink/flink-connector-base {:mvn/version "1.20.0"}
     org.apache.flink/flink-streaming-java {:mvn/version "1.20.0"}
     org.apache.flink/flink-table-api-java {:mvn/version "1.20.0"}
     org.apache.flink/flink-table-api-java-bridge {:mvn/version "1.20.0"}}}
-  :repl
-  {:extra-paths ["classes"]}
+  :test
+  {:extra-deps {
+    io.github.cognitect-labs/test-runner {:git/url "https://github.com/cognitect-labs/test-runner"
+                                          :git/tag "v0.5.1" :git/sha "dfb30dd"}}
+   :main-opts ["-m" "cognitect.test-runner"]
+   :exec-fn cognitect.test-runner.api/test
+   :extra-paths ["test/clojure" "target/classes"]}
+  :cider
+  {:extra-paths ["test/clojure" "target/classes"]}
 
   ;; Run with clj -T:build function-in-build
   :build

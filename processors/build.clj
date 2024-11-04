@@ -13,13 +13,9 @@
 (defn clean [_]
   (b/delete {:path "target"}))
 
-(defn uber [_]
-  (clean nil)
-  (b/copy-dir {:src-dirs ["src/main/clojure" "resources"]
-               :target-dir class-dir})
-
+(defn cc [_]
   (b/javac {:basis @basis
-            :src-dirs ["src/main/java"]
+            :src-dirs ["src/java"]
             :class-dir class-dir
             :javac-opts ["-source" "11" "-target" "11"]})
 
@@ -28,7 +24,14 @@
                                 w08r-flink.tumbling-count
                                 w08r-flink.processor
                                 w08r-flink.kafka]
-                  :class-dir class-dir})
+                  :class-dir class-dir}))
+
+(defn uber [_]
+  (clean nil)
+  (b/copy-dir {:src-dirs ["src/clojure" "resources"]
+               :target-dir class-dir})
+
+  (compile)
 
   (b/uber {:class-dir class-dir
            :uber-file uber-file
