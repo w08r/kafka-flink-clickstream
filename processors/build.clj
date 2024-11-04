@@ -31,7 +31,7 @@
   (b/copy-dir {:src-dirs ["src/clojure" "resources"]
                :target-dir class-dir})
 
-  (compile)
+  (cc)
 
   (b/uber {:class-dir class-dir
            :uber-file uber-file
