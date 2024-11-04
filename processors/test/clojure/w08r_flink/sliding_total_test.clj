@@ -1,4 +1,4 @@
-(ns w08r-flink.processor-test
+(ns w08r-flink.sliding-total-test
   (:require
    [w08r-flink.sliding-total :as st])
   (:import
