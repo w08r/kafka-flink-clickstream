@@ -2,7 +2,7 @@
   (:require [w08r-flink.kafka :as k])
   (:import
    (w08r_flink sliding_total tumbling_count Keyer)
-   (org.apache.flink.streaming.api.datastream DataStreamSource KeyedStream)
+   (org.apache.flink.streaming.api.datastream DataStreamSource)
    (java.time Duration)
    (org.apache.flink.configuration Configuration CheckpointingOptions)
    (org.apache.flink.api.common.eventtime WatermarkStrategy)
@@ -11,11 +11,7 @@
                                                        TumblingProcessingTimeWindows)
 
    (org.apache.flink.table.api.bridge.java StreamTableEnvironment)
-   (org.apache.flink.streaming.api.windowing.windows TimeWindow)
    (org.apache.flink.table.api Expressions Tumble)
-   (org.apache.flink.api.common.functions MapFunction)
-   (org.apache.flink.types Row)
-   (org.apache.flink.api.java.typeutils TypeExtractor ResultTypeQueryable)
    (org.apache.flink.streaming.util.serialization
     JSONKeyValueDeserializationSchema))
 

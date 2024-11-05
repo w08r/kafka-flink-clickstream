@@ -1,1 +1,1 @@
-((nil . ((cider-clojure-cli-aliases . "extra:cider"))))
+((nil . ((cider-clojure-cli-aliases . "extra:cider:jdbc"))))

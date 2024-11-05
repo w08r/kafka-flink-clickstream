@@ -26,12 +26,12 @@
                                 w08r-flink.kafka]
                   :class-dir class-dir}))
 
-(defn uber [_]
+(defn uber [arg]
   (clean nil)
   (b/copy-dir {:src-dirs ["src/clojure" "resources"]
                :target-dir class-dir})
 
-  (cc)
+  (cc arg)
 
   (b/uber {:class-dir class-dir
            :uber-file uber-file

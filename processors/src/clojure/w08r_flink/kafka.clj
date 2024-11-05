@@ -1,7 +1,6 @@
 (ns w08r-flink.kafka
   (:import (com.fasterxml.jackson.databind.node ObjectNode)
            (com.fasterxml.jackson.databind ObjectMapper)
-           (java.util HashMap)
            (org.apache.flink.connector.kafka.sink KafkaRecordSerializationSchema KafkaSink)
            (org.apache.flink.connector.kafka.source KafkaSource)
            (org.apache.flink.connector.kafka.source.enumerator.initializer OffsetsInitializer)
@@ -11,7 +10,6 @@
            (org.apache.flink.api.common.functions MapFunction)
            (org.apache.flink.connector.kafka.source.reader.deserializer
             KafkaRecordDeserializationSchema)
-           (org.apache.flink.types Row RowKind)
            (org.apache.kafka.clients.producer ProducerRecord)))
 
 (set! *warn-on-reflection* true)
@@ -20,14 +18,14 @@
 ;; jackson objectnode, into a map.  This class implements the
 ;; MapFunction interface so can be used in a process call.
 (deftype click-to-row
-  []
-  MapFunction (map [this o]
+         []
+  MapFunction (map [_this o]
                 (let [on ^ObjectNode o]
                   (Tuple2/of
                    (-> on (.get "value") (.get "url") (.asText))
                    (-> on (.get "value") (.get "time") (.asLong)))))
 
-  ResultTypeQueryable (getProducedType [this]
+  ResultTypeQueryable (getProducedType [_this]
                         (TypeExtractor/getForObject (Tuple2/of "" 0))))
 
 (defn serialiser
@@ -36,16 +34,15 @@
   uuid."
   [^String topic]
   (reify KafkaRecordSerializationSchema
-    (serialize ^ProducerRecord [this, e, c, t]
-      (let [es ^HashMap e
-            om (new ObjectMapper)]
-        (let [^String key (if (contains? e :key)
-                            (:key e)
-                            (-> (java.util.UUID/randomUUID) (.toString)))]
-          (new ProducerRecord
-               topic,
-               (.getBytes key)
-               (.writeValueAsBytes om e)))))))
+    (serialize ^ProducerRecord [_this, e, _c, _t]
+      (let [om (new ObjectMapper)
+            ^String key (if (contains? e :key)
+                          (:key e)
+                          (-> (java.util.UUID/randomUUID) (.toString)))]
+        (new ProducerRecord
+             topic,
+             (.getBytes key)
+             (.writeValueAsBytes om e))))))
 
 (defn sink
   "Create a kafka sink for given topic."
@@ -65,10 +62,10 @@
       (.setGroupId "flink")
       (.setStartingOffsets (OffsetsInitializer/earliest))
       (.setDeserializer (reify KafkaRecordDeserializationSchema
-                          (open [this c]
+                          (open [_this c]
                             (.open kvd c))
-                          (getProducedType [this]
+                          (getProducedType [_this]
                             (TypeExtractor/getForClass ObjectNode))
-                          (deserialize [this, r o]
+                          (deserialize [_this, r o]
                             (.deserialize kvd r o))))
       (.build)))

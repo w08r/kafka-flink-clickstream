@@ -11,10 +11,10 @@
 
 (set! *warn-on-reflection* true)
 
-(defn tf-getProducedType [this]
+(defn tf-getProducedType [_this]
   (org.apache.flink.api.java.typeutils.TypeExtractor/getForClass HashMap))
 
-(defn tf-process [this k c ^Iterable i ^Collector o]
+(defn tf-process [_this k _c ^Iterable i ^Collector o]
   (let [h (new HashMap 2)]
     (.put h :key k)
     (.put h :count (count i))

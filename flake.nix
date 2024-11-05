@@ -15,6 +15,8 @@
                 cargo
                 clippy
                 clojure
+                cljfmt
+                clj-kondo
                 cmake
                 gcc
                 iconv

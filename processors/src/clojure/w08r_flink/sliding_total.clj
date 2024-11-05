@@ -11,10 +11,10 @@
 
 (set! *warn-on-reflection* true)
 
-(defn st-getProducedType [this]
+(defn st-getProducedType [_this]
   (org.apache.flink.api.java.typeutils.TypeExtractor/getForClass HashMap))
 
-(defn st-process [this c ^Iterable i ^Collector o]
+(defn st-process [_this _c ^Iterable i ^Collector o]
   (let [h (new HashMap 1)]
     (.put h :total (count i))
     (.collect o h)))
